@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXPO 2025 ゲーム画面メーカー</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #07071a;
+  --panel: #0d0d2b;
+  --border: #3a3a6a;
+  --accent: #88aaff;
+  --yellow: #ffdd33;
+  --green: #44ee88;
+  --text: #ddeeff;
+  --muted: #5566aa;
+  --input-bg: #12122e;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DotGothic16', monospace;
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+}
+
+h1 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--yellow);
+  text-align: center;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+  text-shadow: 0 0 12px rgba(255,221,51,0.5);
+}
+.subtitle {
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  letter-spacing: 1px;
+}
+
+.layout {
+  display: flex;
+  gap: 28px;
+  max-width: 960px;
+  margin: 0 auto;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* ===== エディタパネル ===== */
+.editor {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.section-title {
+  font-size: 9px;
+  color: var(--yellow);
+  letter-spacing: 2px;
+  background: rgba(255,221,51,0.06);
+  border-bottom: 1px solid var(--border);
+  padding: 7px 12px;
+}
+.section-body {
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+input[type="text"], textarea, select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DotGothic16', monospace;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input[type="text"]:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+}
+textarea { resize: vertical; min-height: 70px; }
+select option { background: var(--input-bg); }
+
+/* 画像アップロード */
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 6px;
+  padding: 22px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.upload-area:hover {
+  border-color: var(--accent);
+  background: rgba(136,170,255,0.04);
+}
+.upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-icon { font-size: 22px; margin-bottom: 6px; }
+.upload-text { font-size: 10px; color: var(--muted); }
+.upload-preview {
+  width: 100%;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: none;
+  margin-top: 8px;
+}
+
+/* 選択肢 */
+.choices-list { display: flex; flex-direction: column; gap: 7px; }
+.choice-row { display: flex; gap: 6px; align-items: center; }
+.choice-label { font-size: 11px; color: var(--yellow); min-width: 18px; }
+.choice-row input { flex: 1; }
+.choice-sel-btn {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'DotGothic16', monospace;
+  font-size: 9px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.choice-sel-btn.active {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(68,238,136,0.08);
+}
+
+/* 生成ボタン */
+.gen-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #1a1a4a, #2a2a6a);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  padding: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.2s;
+  text-shadow: 0 0 8px rgba(136,170,255,0.5);
+}
+.gen-btn:hover {
+  background: linear-gradient(135deg, #2a2a6a, #3a3a8a);
+  box-shadow: 0 0 20px rgba(136,170,255,0.3);
+}
+
+/* ===== プレビューパネル ===== */
+.preview-wrap {
+  flex: 1;
+  min-width: 300px;
+  position: sticky;
+  top: 24px;
+}
+.preview-label {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+/* ゲーム画面 */
+.gw {
+  font-family: 'DotGothic16', monospace;
+  background: #0a0a1a;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  box-shadow: 0 0 0 4px #1a1a3a, 0 8px 32px rgba(0,0,0,0.6);
+  width: 100%;
+  max-width: 480px;
+}
+
+.g-statusbar {
+  background: #0d0d2b;
+  border-bottom: 2px solid var(--border);
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.g-stats { display: flex; gap: 14px; }
+.g-stat { display: flex; flex-direction: column; gap: 1px; }
+.g-stat-l { font-size: 9px; color: var(--muted); letter-spacing: 1px; }
+.g-stat-v { color: var(--accent); font-size: 11px; }
+.g-hpwrap { display: flex; align-items: center; gap: 6px; }
+.g-hpbar { width: 56px; height: 7px; background: #1a1a3a; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+.g-hpfill { height: 100%; background: var(--green); transition: width 0.4s; }
+
+.g-scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: #111122;
+  cursor: grab;
+  user-select: none;
+}
+.g-scene.dragging { cursor: grabbing; }
+.g-scene-img {
+  position: absolute;
+  transform-origin: center center;
+  opacity: 0.82;
+  display: block;
+  pointer-events: none;
+  image-rendering: auto;
+}
+.g-scene-img.pixelated {
+  image-rendering: pixelated;
+  filter: saturate(1.4) contrast(1.1);
+}
+.g-scene-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,30,0.08) 0%, rgba(0,0,30,0.55) 100%);
+  pointer-events: none;
+}
+.g-no-image {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 8px;
+  color: var(--muted); font-size: 11px;
+  background: #0d0d22;
+}
+.g-location-tag {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(10,10,40,0.88);
+  border: 1px solid #4455cc;
+  color: var(--accent);
+  font-size: 10px; padding: 4px 10px;
+  border-radius: 3px; letter-spacing: 1px;
+}
+.g-encounter {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(255,220,50,0.12);
+  border: 1px solid var(--yellow);
+  color: var(--yellow);
+  font-size: 10px; padding: 4px 10px;
+  border-radius: 3px;
+}
+
+.g-dialogue {
+  background: #0d0d2b;
+  border-top: 2px solid var(--border);
+  padding: 13px 15px 11px;
+}
+.g-speaker { font-size: 10px; color: var(--yellow); letter-spacing: 1px; margin-bottom: 6px; }
+.g-text { font-size: 12px; color: var(--text); line-height: 1.85; margin-bottom: 10px; }
+.g-choices { border-top: 1px solid #2a2a4a; padding-top: 9px; display: flex; flex-direction: column; gap: 5px; }
+.g-choice {
+  font-size: 11px; color: #aabbdd;
+  padding: 3px 0 3px 12px;
+  border-left: 2px solid var(--border);
+}
+.g-choice.sel { color: var(--green); border-left-color: var(--green); }
+
+.g-footer {
+  background: #0a0a1a;
+  border-top: 2px solid var(--border);
+  padding: 6px 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 9px; color: var(--muted); letter-spacing: 1px;
+}
+.g-tags { color: var(--muted); font-size: 9px; }
+
+/* 保存ボタン */
+.save-btn {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  margin-top: 12px;
+  background: rgba(68,238,136,0.08);
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: 'DotGothic16', monospace;
+  font-size: 11px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.save-btn:hover { background: rgba(68,238,136,0.15); }
+
+.hint {
+  font-size: 9px; color: var(--muted); margin-top: 8px;
+  line-height: 1.7; letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+
+<h1>EXPO 2025 GAME SCREEN MAKER</h1>
+<p class="subtitle">▶ 万博の思い出をアドベンチャーゲーム風に</p>
+
+<div class="layout">
+
+  <!-- ===== エディタ ===== -->
+  <div class="editor">
+
+    <div class="section">
+      <div class="section-title">📷 写真</div>
+      <div class="section-body">
+        <div class="upload-area" id="uploadArea">
+          <input type="file" accept="image/*" id="imageInput" onchange="handleImage(event)">
+          <div class="upload-icon">🖼️</div>
+          <div class="upload-text">クリックして写真を選択<br>（画像はブラウザ内のみで処理されます）</div>
+          <img class="upload-preview" id="uploadPreview">
+        </div>
+        <div id="imgAdjustControls" style="display:none">
+          <label>ズーム</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" id="zoomSlider" min="50" max="300" value="100" style="flex:1;accent-color:var(--accent)" oninput="applyTransform()">
+            <span id="zoomVal" style="font-size:10px;color:var(--accent);min-width:36px">100%</span>
+          </div>
+          <div style="margin-top:6px;font-size:9px;color:var(--muted)">📌 プレビュー画像をドラッグして位置調整できます</div>
+          <button onclick="resetTransform()" style="margin-top:8px;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);font-family:'DotGothic16',monospace;font-size:10px;padding:5px 10px;border-radius:4px;cursor:pointer;width:100%">リセット</button>
+          <div style="margin-top:10px">
+            <label>画像スタイル</label>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button id="btnNormal" onclick="setPixelMode(false)" style="flex:1;background:rgba(68,238,136,0.12);border:1px solid var(--green);color:var(--green);font-family:'DotGothic16',monospace;font-size:10px;padding:6px;border-radius:4px;cursor:pointer">📷 そのまま</button>
+              <button id="btnPixel" onclick="setPixelMode(true)" style="flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);font-family:'DotGothic16',monospace;font-size:10px;padding:6px;border-radius:4px;cursor:pointer">🎮 ゲーム風</button>
+            </div>
+            <div style="font-size:9px;color:var(--muted);margin-top:4px">※「ゲーム風」はピクセル処理＋彩度強調になります</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📋 ステータス表示</div>
+      <div class="section-body">
+        <div>
+          <label>DATE（日付）</label>
+          <input type="text" id="inputDate" value="2025.05.15" oninput="updatePreview()">
+        </div>
+        <div>
+          <label>LOCATION（場所）</label>
+          <input type="text" id="inputLocation" value="オランダ館" oninput="updatePreview()">
+        </div>
+        <div>
+          <label>TIME（時刻）</label>
+          <input type="text" id="inputTime" value="09:45" oninput="updatePreview()">
+        </div>
+        <div>
+          <label>体力バー（%）</label>
+          <input type="text" id="inputHp" value="90" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🏷️ シーンタグ</div>
+      <div class="section-body">
+        <div>
+          <label>左タグ（場所名など）</label>
+          <input type="text" id="inputLocationTag" value="▶ NETHERLANDS PAVILION" oninput="updatePreview()">
+        </div>
+        <div>
+          <label>右タグ（イベントなど）</label>
+          <input type="text" id="inputEncounter" value="★ ENCOUNTER!" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">💬 ダイアログ</div>
+      <div class="section-body">
+        <div>
+          <label>語り手ラベル</label>
+          <input type="text" id="inputSpeaker" value="▼ ナレーション" oninput="updatePreview()">
+        </div>
+        <div>
+          <label>本文（改行OK）</label>
+          <textarea id="inputText" oninput="updatePreview()">朝イチ、「自由入場できる」という噂を信じてオランダ館へ向かった。
+少しの行列を抜けると――
+そこにミッフィーがいた。
+着物姿で、静かに出迎えてくれた。</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🎮 選択肢（選んだものをクリック）</div>
+      <div class="section-body">
+        <div class="choices-list">
+          <div class="choice-row">
+            <span class="choice-label">A.</span>
+            <input type="text" class="choice-input" data-idx="0" value="パビリオン内を探索する" oninput="updatePreview()">
+            <button class="choice-sel-btn" data-idx="0" onclick="selectChoice(0)">選択</button>
+          </div>
+          <div class="choice-row">
+            <span class="choice-label">B.</span>
+            <input type="text" class="choice-input" data-idx="1" value="ミッフィーを探す" oninput="updatePreview()">
+            <button class="choice-sel-btn" data-idx="1" onclick="selectChoice(1)">選択</button>
+          </div>
+          <div class="choice-row">
+            <span class="choice-label">C.</span>
+            <input type="text" class="choice-input" data-idx="2" value="写真を撮る" oninput="updatePreview()">
+            <button class="choice-sel-btn active" data-idx="2" onclick="selectChoice(2)">選択✓</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🏷️ フッター</div>
+      <div class="section-body">
+        <div>
+          <label>左テキスト</label>
+          <input type="text" id="inputFooterLeft" value="EXPO 2025 OSAKA" oninput="updatePreview()">
+        </div>
+        <div>
+          <label>ハッシュタグ</label>
+          <input type="text" id="inputTags" value="#大阪・関西万博 #EXPO2025 #一年前の今日" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== プレビュー ===== -->
+  <div class="preview-wrap">
+    <div class="preview-label">▶ プレビュー</div>
+
+    <div class="gw" id="gameScreen">
+      <div class="g-statusbar">
+        <div class="g-stats">
+          <div class="g-stat"><span class="g-stat-l">DATE</span><span class="g-stat-v" id="pDate">2025.05.15</span></div>
+          <div class="g-stat"><span class="g-stat-l">LOCATION</span><span class="g-stat-v" id="pLocation">オランダ館</span></div>
+          <div class="g-stat"><span class="g-stat-l">TIME</span><span class="g-stat-v" id="pTime">09:45</span></div>
+        </div>
+        <div class="g-hpwrap">
+          <span class="g-stat-l">体力</span>
+          <div class="g-hpbar"><div class="g-hpfill" id="pHp" style="width:90%"></div></div>
+        </div>
+      </div>
+
+      <div class="g-scene" id="pScene">
+        <div class="g-no-image" id="pNoImage">
+          <span>📷</span>
+          <span>写真をアップロード</span>
+        </div>
+        <img class="g-scene-img" id="pImg" style="display:none">
+        <div class="g-scene-overlay"></div>
+        <div class="g-location-tag" id="pLocationTag">▶ NETHERLANDS PAVILION</div>
+        <div class="g-encounter" id="pEncounter">★ ENCOUNTER!</div>
+      </div>
+
+      <div class="g-dialogue">
+        <div class="g-speaker" id="pSpeaker">▼ ナレーション</div>
+        <div class="g-text" id="pText"></div>
+        <div class="g-choices" id="pChoices"></div>
+      </div>
+
+      <div class="g-footer">
+        <span id="pFooterLeft">EXPO 2025 OSAKA</span>
+        <span class="g-tags" id="pTags">#大阪・関西万博 #EXPO2025 #一年前の今日</span>
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveImage()">💾 画像として保存（スクリーンショット）</button>
+    <p class="hint">
+      ※「画像として保存」はhtml2canvasを使ってPNG出力します。<br>
+      ※ 写真データは一切外部に送信されません。<br>
+      ※ ブラウザで開いて使用してください。
+    </p>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+let selectedChoice = 2;
+let imageDataUrl = null;
+const labels = ['A', 'B', 'C'];
+
+// 位置・ズーム管理
+let imgX = 0, imgY = 0, imgScale = 1;
+let dragging = false, startX = 0, startY = 0, startImgX = 0, startImgY = 0;
+let pixelMode = false;
+
+function setPixelMode(on) {
+  pixelMode = on;
+  const img = document.getElementById('pImg');
+  if (on) {
+    img.classList.add('pixelated');
+    document.getElementById('btnPixel').style.cssText = 'flex:1;background:rgba(68,238,136,0.12);border:1px solid var(--green);color:var(--green);font-family:"DotGothic16",monospace;font-size:10px;padding:6px;border-radius:4px;cursor:pointer';
+    document.getElementById('btnNormal').style.cssText = 'flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);font-family:"DotGothic16",monospace;font-size:10px;padding:6px;border-radius:4px;cursor:pointer';
+  } else {
+    img.classList.remove('pixelated');
+    document.getElementById('btnNormal').style.cssText = 'flex:1;background:rgba(68,238,136,0.12);border:1px solid var(--green);color:var(--green);font-family:"DotGothic16",monospace;font-size:10px;padding:6px;border-radius:4px;cursor:pointer';
+    document.getElementById('btnPixel').style.cssText = 'flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);font-family:"DotGothic16",monospace;font-size:10px;padding:6px;border-radius:4px;cursor:pointer';
+  }
+}
+
+function applyTransform() {
+  const img = document.getElementById('pImg');
+  const slider = document.getElementById('zoomSlider');
+  imgScale = parseFloat(slider.value) / 100;
+  document.getElementById('zoomVal').textContent = slider.value + '%';
+  img.style.transform = `translate(${imgX}px, ${imgY}px) scale(${imgScale})`;
+}
+
+function resetTransform() {
+  const img = document.getElementById('pImg');
+  const scene = document.getElementById('pScene');
+  if (!img.naturalWidth) return;
+  const sw = scene.offsetWidth;
+  const sh = scene.offsetHeight;
+  const scaleW = sw / img.naturalWidth;
+  const scaleH = sh / img.naturalHeight;
+  imgScale = Math.max(scaleW, scaleH);
+  const pct = Math.round(imgScale * 100);
+  const clampedPct = Math.min(300, Math.max(50, pct));
+  document.getElementById('zoomSlider').value = clampedPct;
+  document.getElementById('zoomVal').textContent = clampedPct + '%';
+  imgScale = clampedPct / 100;
+  imgX = 0; imgY = 0;
+  img.style.transform = `translate(0px, 0px) scale(${imgScale})`;
+}
+
+function fitImageToScene() {
+  const img = document.getElementById('pImg');
+  const scene = document.getElementById('pScene');
+  if (!img.naturalWidth) return;
+  // transform-origin: center なので画像をシーン中央に配置
+  img.style.left = '50%';
+  img.style.top = '50%';
+  img.style.transform = 'translate(-50%, -50%)';
+  imgX = 0; imgY = 0;
+  const sw = scene.offsetWidth;
+  const sh = scene.offsetHeight;
+  const scaleW = sw / img.naturalWidth;
+  const scaleH = sh / img.naturalHeight;
+  imgScale = Math.max(scaleW, scaleH);
+  const pct = Math.round(imgScale * 100);
+  const clampedPct = Math.min(300, Math.max(50, pct));
+  document.getElementById('zoomSlider').value = clampedPct;
+  document.getElementById('zoomVal').textContent = clampedPct + '%';
+  imgScale = clampedPct / 100;
+  img.style.left = '50%';
+  img.style.top = '50%';
+  img.style.transform = `translate(calc(-50% + ${imgX}px), calc(-50% + ${imgY}px)) scale(${imgScale})`;
+}
+
+// ドラッグ操作
+function initDrag() {
+  const scene = document.getElementById('pScene');
+
+  scene.addEventListener('mousedown', e => {
+    if (!imageDataUrl) return;
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    startImgX = imgX; startImgY = imgY;
+    scene.classList.add('dragging');
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    imgX = startImgX + (e.clientX - startX);
+    imgY = startImgY + (e.clientY - startY);
+    const img = document.getElementById('pImg');
+    img.style.transform = `translate(calc(-50% + ${imgX}px), calc(-50% + ${imgY}px)) scale(${imgScale})`;
+  });
+  window.addEventListener('mouseup', () => {
+    dragging = false;
+    document.getElementById('pScene').classList.remove('dragging');
+  });
+
+  // タッチ対応
+  scene.addEventListener('touchstart', e => {
+    if (!imageDataUrl || e.touches.length !== 1) return;
+    dragging = true;
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    startImgX = imgX; startImgY = imgY;
+    e.preventDefault();
+  }, {passive: false});
+  window.addEventListener('touchmove', e => {
+    if (!dragging || e.touches.length !== 1) return;
+    imgX = startImgX + (e.touches[0].clientX - startX);
+    imgY = startImgY + (e.touches[0].clientY - startY);
+    const img = document.getElementById('pImg');
+    img.style.transform = `translate(calc(-50% + ${imgX}px), calc(-50% + ${imgY}px)) scale(${imgScale})`;
+    e.preventDefault();
+  }, {passive: false});
+  window.addEventListener('touchend', () => { dragging = false; });
+
+  // ホイールズーム
+  scene.addEventListener('wheel', e => {
+    if (!imageDataUrl) return;
+    e.preventDefault();
+    const slider = document.getElementById('zoomSlider');
+    let v = parseInt(slider.value) - Math.sign(e.deltaY) * 5;
+    v = Math.min(300, Math.max(50, v));
+    slider.value = v;
+    imgScale = v / 100;
+    document.getElementById('zoomVal').textContent = v + '%';
+    const img = document.getElementById('pImg');
+    img.style.transform = `translate(calc(-50% + ${imgX}px), calc(-50% + ${imgY}px)) scale(${imgScale})`;
+  }, {passive: false});
+}
+
+function handleImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imageDataUrl = ev.target.result;
+    document.getElementById('uploadPreview').src = imageDataUrl;
+    document.getElementById('uploadPreview').style.display = 'block';
+    const img = document.getElementById('pImg');
+    img.src = imageDataUrl;
+    img.style.display = 'block';
+    img.style.left = '50%';
+    img.style.top = '50%';
+    document.getElementById('pNoImage').style.display = 'none';
+    document.getElementById('imgAdjustControls').style.display = 'block';
+    img.onload = () => { imgX = 0; imgY = 0; fitImageToScene(); };
+  };
+  reader.readAsDataURL(file);
+}
+
+function selectChoice(idx) {
+  selectedChoice = idx;
+  document.querySelectorAll('.choice-sel-btn').forEach((btn, i) => {
+    if (i === idx) {
+      btn.classList.add('active');
+      btn.textContent = '選択✓';
+    } else {
+      btn.classList.remove('active');
+      btn.textContent = '選択';
+    }
+  });
+  updatePreview();
+}
+
+function updatePreview() {
+  document.getElementById('pDate').textContent = document.getElementById('inputDate').value;
+  document.getElementById('pLocation').textContent = document.getElementById('inputLocation').value;
+  document.getElementById('pTime').textContent = document.getElementById('inputTime').value;
+
+  const hp = Math.min(100, Math.max(0, parseInt(document.getElementById('inputHp').value) || 0));
+  document.getElementById('pHp').style.width = hp + '%';
+
+  document.getElementById('pLocationTag').textContent = document.getElementById('inputLocationTag').value;
+  document.getElementById('pEncounter').textContent = document.getElementById('inputEncounter').value;
+  document.getElementById('pSpeaker').textContent = document.getElementById('inputSpeaker').value;
+
+  const rawText = document.getElementById('inputText').value;
+  document.getElementById('pText').innerHTML = rawText.replace(/\n/g, '<br>');
+
+  const choicesEl = document.getElementById('pChoices');
+  choicesEl.innerHTML = '';
+  document.querySelectorAll('.choice-input').forEach((inp, i) => {
+    const val = inp.value.trim();
+    if (!val) return;
+    const div = document.createElement('div');
+    div.className = 'g-choice' + (i === selectedChoice ? ' sel' : '');
+    div.textContent = (i === selectedChoice ? '▶ ' : '') + labels[i] + '. ' + val;
+    choicesEl.appendChild(div);
+  });
+
+  document.getElementById('pFooterLeft').textContent = document.getElementById('inputFooterLeft').value;
+  document.getElementById('pTags').textContent = document.getElementById('inputTags').value;
+}
+
+async function saveImage() {
+  const el = document.getElementById('gameScreen');
+  const canvas = await html2canvas(el, {
+    scale: 2,
+    backgroundColor: null,
+    useCORS: true,
+    allowTaint: true,
+  });
+  const link = document.createElement('a');
+  link.download = 'expo2025_game.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// 初期レンダリング
+updatePreview();
+initDrag();
+</script>
+</body>
+</html>
